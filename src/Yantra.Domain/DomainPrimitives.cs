@@ -15,7 +15,12 @@ public readonly record struct SystemId(string Value)
     public override string ToString() => Value;
 }
 
-public readonly record struct TargetId(string Value)
+public readonly record struct BoardId(string Value)
+{
+    public override string ToString() => Value;
+}
+
+public readonly record struct BackendId(string Value)
 {
     public override string ToString() => Value;
 }
@@ -34,7 +39,6 @@ public enum BlockKind
     Io,
     Video,
     Clock,
-    Target,
     Other
 }
 
@@ -55,6 +59,7 @@ public sealed record BlockDefinition(
 public sealed record SystemDefinition(
     SystemId Id,
     string Name,
-    TargetId Target,
+    BoardId Board,
+    BackendId Backend,
     IReadOnlyList<BlockInstance> Instances,
     IReadOnlyList<SystemConnection> Connections);

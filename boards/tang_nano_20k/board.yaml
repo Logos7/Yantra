@@ -1,0 +1,15 @@
+id: tang_nano_20k
+name: Tang Nano 20K
+vendor: gowin
+
+clocks:
+  - id: sys
+    frequency_hz: 27000000
+
+constraints:
+  gowin:
+    directory: constraints/gowin
+
+notes:
+  - Initial placeholder board descriptor.
+  - Exact pin fragments will be added in later commits.

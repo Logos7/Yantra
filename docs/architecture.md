@@ -2,12 +2,12 @@
 
 Yantra is an independent block-first FPGA design project.
 
-It is not a refactor of any older project. It starts from simple concepts and grows toward a visual system editor.
+It starts from simple concepts and grows toward a visual system editor.
 
 ## Core chain
 
 ```text
-Block Type -> Instance -> System -> Target -> Build -> Artifact
+Block Type -> Instance -> System -> Board + Backend -> Build -> Artifact
                     ^
                  Program
                     ^
@@ -21,6 +21,8 @@ Block Type -> Instance -> System -> Target -> Build -> Artifact
 A block type is a reusable hardware component definition: processor, memory, bus, UART, HDMI, PLL, LED, reset synchronizer, and so on.
 
 A processor is also just a block type.
+
+Blocks are logical hardware building blocks. Physical FPGA boards are not blocks.
 
 ### Instance
 
@@ -42,9 +44,34 @@ instances:
 
 A system is a composition of block instances and connections between their interfaces.
 
-### Target
+A system is not a board. A system is the logical circuit design.
 
-A target is a physical FPGA board plus vendor/backend details: pins, clocks, constraints, resources, and build toolchain.
+### Board
+
+A board is a physical FPGA board: pins, clocks, connectors, constraints, and available resources.
+
+Examples:
+
+```text
+tang_nano_20k
+tang_primer_25k
+tang_mega_138k
+```
+
+### Backend
+
+A backend is the toolchain/vendor flow used to build a system for a board.
+
+Examples:
+
+```text
+gowin
+xilinx
+lattice
+yosys_nextpnr
+```
+
+A concrete build uses a system, a board, and a backend.
 
 ### Interface
 
@@ -61,7 +88,15 @@ Rules:
 3. External connectivity happens through declared interfaces.
 4. Systems compose instances; block definitions compose subblocks.
 
-## First practical target
+## First practical board
+
+The first board description is:
+
+```text
+boards/tang_nano_20k
+```
+
+## First practical system
 
 The first real system should be intentionally tiny:
 
@@ -69,4 +104,4 @@ The first real system should be intentionally tiny:
 input clock -> counter -> LED
 ```
 
-This proves descriptors, composition, validation, target mapping, and the first editor view without dragging in a large CPU too early.
+This proves descriptors, composition, validation, board mapping, and the first editor view without dragging in a large CPU too early.

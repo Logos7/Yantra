@@ -11,10 +11,21 @@ public sealed record InterfaceDocument(
     string Kind,
     string Protocol);
 
+public sealed record BoardDocument(
+    string Id,
+    string Name,
+    string Vendor,
+    IReadOnlyList<BoardClockDocument> Clocks);
+
+public sealed record BoardClockDocument(
+    string Id,
+    long FrequencyHz);
+
 public sealed record SystemDocument(
     string Id,
     string Name,
-    string Target,
+    string Board,
+    string Backend,
     IReadOnlyList<InstanceDocument> Instances,
     IReadOnlyList<ConnectionDocument> Connections);
 
