@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Yantra.Studio.Views.MainWindow"
+        Title="{Binding Title}"
+        Width="1100"
+        Height="720">
+  <Grid RowDefinitions="Auto,*" ColumnDefinitions="260,*,300">
+    <Border Grid.Row="0" Grid.ColumnSpan="3" Padding="12" BorderThickness="0,0,0,1" BorderBrush="#333333">
+      <TextBlock Text="Yantra Studio" FontSize="20" FontWeight="SemiBold" />
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="0" Padding="12" BorderThickness="0,0,1,0" BorderBrush="#333333">
+      <StackPanel Spacing="8">
+        <TextBlock Text="Blocks" FontWeight="SemiBold" />
+        <TextBlock Text="clock/counter" />
+        <TextBlock Text="io/led" />
+        <TextBlock Text="targets/tang_nano_20k" />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="1" Padding="16">
+      <StackPanel Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="System canvas" FontSize="18" HorizontalAlignment="Center" />
+        <TextBlock Text="[clock] → [counter] → [LED]" FontSize="24" HorizontalAlignment="Center" />
+        <TextBlock Text="First milestone: load YAML descriptors and render this graph." Opacity="0.75" HorizontalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="2" Padding="12" BorderThickness="1,0,0,0" BorderBrush="#333333">
+      <StackPanel Spacing="8">
+        <TextBlock Text="Inspector" FontWeight="SemiBold" />
+        <TextBlock Text="No selection." Opacity="0.75" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</Window>
