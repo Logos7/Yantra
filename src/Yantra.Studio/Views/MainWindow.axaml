@@ -12,17 +12,23 @@
     <Border Grid.Row="1" Grid.Column="0" Padding="12" BorderThickness="0,0,1,0" BorderBrush="#333333">
       <StackPanel Spacing="8">
         <TextBlock Text="Blocks" FontWeight="SemiBold" />
+        <TextBlock Text="clock/input_clock" />
         <TextBlock Text="clock/counter" />
         <TextBlock Text="io/led" />
-        <TextBlock Text="targets/tang_nano_20k" />
+        <TextBlock Text="" />
+        <TextBlock Text="Boards" FontWeight="SemiBold" />
+        <TextBlock Text="tang_nano_20k" />
+        <TextBlock Text="" />
+        <TextBlock Text="Systems" FontWeight="SemiBold" />
+        <TextBlock Text="blink_led" />
       </StackPanel>
     </Border>
 
     <Border Grid.Row="1" Grid.Column="1" Padding="16">
       <StackPanel Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center">
         <TextBlock Text="System canvas" FontSize="18" HorizontalAlignment="Center" />
-        <TextBlock Text="[clock] → [counter] → [LED]" FontSize="24" HorizontalAlignment="Center" />
-        <TextBlock Text="First milestone: load YAML descriptors and render this graph." Opacity="0.75" HorizontalAlignment="Center" />
+        <TextBlock Text="[input clock] → [counter] → [LED]" FontSize="24" HorizontalAlignment="Center" />
+        <TextBlock Text="Current milestone: load YAML descriptors and map them to domain objects." Opacity="0.75" HorizontalAlignment="Center" />
       </StackPanel>
     </Border>
 
