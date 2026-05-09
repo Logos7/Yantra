@@ -12,8 +12,13 @@ public enum DiagnosticSeverity
 public sealed record CompositionDiagnostic(DiagnosticSeverity Severity, string Message);
 
 public sealed record CompositionResult(
-    SystemDefinition? System,
+    SystemDefinition System,
     IReadOnlyList<CompositionDiagnostic> Diagnostics)
 {
     public bool IsSuccess => Diagnostics.All(d => d.Severity != DiagnosticSeverity.Error);
+}
+
+public sealed record WorkspaceCompositionResult(IReadOnlyList<CompositionResult> Systems)
+{
+    public bool IsSuccess => Systems.All(s => s.IsSuccess);
 }

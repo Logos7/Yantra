@@ -46,9 +46,15 @@ public sealed record BlockInterface(InterfaceId Id, string Kind, string Protocol
 
 public sealed record BlockParameter(string Name, string Type, string? DefaultValue);
 
-public sealed record Endpoint(InstanceId Instance, InterfaceId Interface);
+public sealed record Endpoint(InstanceId Instance, InterfaceId Interface)
+{
+    public override string ToString() => $"{Instance}.{Interface}";
+}
 
-public sealed record SystemConnection(Endpoint From, Endpoint To);
+public sealed record SystemConnection(Endpoint From, Endpoint To)
+{
+    public override string ToString() => $"{From} -> {To}";
+}
 
 public sealed record BlockInstance(
     InstanceId Id,
