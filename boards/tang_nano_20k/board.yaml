@@ -5,11 +5,21 @@ vendor: gowin
 clocks:
   - id: sys
     frequency_hz: 27000000
+    pin: 4
+    signal: clk_27mhz
+
+leds:
+  - id: led0
+    pin: 15
+    signal: led0
+    active: low
 
 constraints:
   gowin:
-    directory: constraints/gowin
+    fragments:
+      - constraints/gowin/clock_27mhz.cst
+      - constraints/gowin/led0.cst
 
 notes:
-  - Initial placeholder board descriptor.
-  - Exact pin fragments will be added in later commits.
+  - Initial board descriptor for the first Yantra blink_led system.
+  - More board resources will be added incrementally.

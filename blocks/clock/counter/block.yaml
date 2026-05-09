@@ -1,0 +1,21 @@
+id: clock/counter
+name: Counter
+kind: Clock
+
+parameters:
+  - name: width
+    type: integer
+    default: 24
+
+interfaces:
+  - name: clk
+    kind: clock.sink
+    protocol: yantra.clock.v1
+
+  - name: bit23
+    kind: digital.source
+    protocol: yantra.bit.v1
+
+notes:
+  - Minimal descriptor-only counter block for the first blink_led system.
+  - RTL and parameterized bit exports will be added later.

@@ -1,0 +1,16 @@
+id: clock/input_clock
+name: Input Clock
+kind: Clock
+
+interfaces:
+  - name: out
+    kind: clock.source
+    protocol: yantra.clock.v1
+
+  - name: pin
+    kind: board.clock
+    protocol: yantra.board.pin.v1
+
+notes:
+  - Pseudo-block representing a board-provided input clock.
+  - The physical pin is selected by the build descriptor.

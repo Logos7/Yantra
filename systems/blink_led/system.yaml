@@ -1,0 +1,21 @@
+id: blink_led
+name: Blink LED
+board: tang_nano_20k
+backend: gowin
+
+instances:
+  - id: clk0
+    block: clock/input_clock
+
+  - id: counter0
+    block: clock/counter
+
+  - id: led0
+    block: io/led
+
+connections:
+  - from: clk0.out
+    to: counter0.clk
+
+  - from: counter0.bit23
+    to: led0.in

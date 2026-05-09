@@ -1,0 +1,23 @@
+id: tang_nano_20k_gowin
+system: blink_led
+board: tang_nano_20k
+backend: gowin
+
+top: blink_led_top
+
+constraints:
+  - boards/tang_nano_20k/constraints/gowin/clock_27mhz.cst
+  - boards/tang_nano_20k/constraints/gowin/led0.cst
+
+board_bindings:
+  - interface: clk0.pin
+    resource: clocks.sys
+    signal: clk_27mhz
+
+  - interface: led0.pin
+    resource: leds.led0
+    signal: led0
+
+notes:
+  - Descriptor-only build target for the first Yantra milestone.
+  - HDL generation and Gowin project generation will be added later.
