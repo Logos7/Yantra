@@ -8,8 +8,14 @@ public sealed class WorkspaceDescriptorLoader
 
     public IReadOnlyList<BlockDefinition> LoadBlocks(string rootDirectory)
     {
+        var blocksPath = Path.Combine(rootDirectory, "blocks");
+        if (!Directory.Exists(blocksPath))
+        {
+            return [];
+        }
+
         return Directory
-            .EnumerateFiles(Path.Combine(rootDirectory, "blocks"), "block.yaml", SearchOption.AllDirectories)
+            .EnumerateFiles(blocksPath, "block.yaml", SearchOption.AllDirectories)
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .Select(path => _loader.LoadBlock(path).ToDomain())
             .ToArray();

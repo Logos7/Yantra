@@ -1,11 +1,16 @@
 using System.Collections.ObjectModel;
+using Yantra.Composition;
+using Yantra.Domain;
 using Yantra.Studio.Infrastructure;
 using Yantra.Studio.Models;
+using Yantra.Studio.Services;
 
 namespace Yantra.Studio.ViewModels;
 
 public sealed class StudioAppViewModel : ObservableObject
 {
+    private readonly StudioWorkspaceLoader _workspaceLoader = new();
+    private StudioWorkspaceSnapshot? _workspace;
     private StudioDocumentViewModel? _activeDocument;
     private CanvasTool _activeTool = CanvasTool.Select;
     private string _statusText = "Ready";
@@ -22,9 +27,13 @@ public sealed class StudioAppViewModel : ObservableObject
         Commands = new StudioCommands(this);
 
         CreatePanels();
+        LoadWorkspace();
         NewCanvas();
-        Documents.Add(new TextDocumentViewModel("doc.arch", "Architecture.md", File.Exists("docs/architecture.md") ? File.ReadAllText("docs/architecture.md") : "# Yantra"));
-        WriteConsole("Studio shell initialized.");
+
+        if (File.Exists("docs/architecture.md"))
+        {
+            Documents.Add(new TextDocumentViewModel("doc.arch", "Architecture.md", File.ReadAllText("docs/architecture.md")));
+        }
     }
 
     public ObservableCollection<StudioDocumentViewModel> Documents { get; } = [];
@@ -67,7 +76,7 @@ public sealed class StudioAppViewModel : ObservableObject
 
     public void NewCanvas()
     {
-        var scene = CreateSampleScene();
+        var scene = CreateWorkspaceScene();
         scene.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CanvasSceneViewModel.SelectedNode))
@@ -76,22 +85,39 @@ public sealed class StudioAppViewModel : ObservableObject
             }
         };
 
-        var document = new CanvasDocumentViewModel($"canvas.{Documents.Count + 1}", "blink_led.system", scene);
+        var document = new CanvasDocumentViewModel($"canvas.{Documents.Count + 1}", $"{scene.SystemId}.system", scene);
         Documents.Add(document);
         ActiveDocument = document;
-        WriteConsole("Opened graphical system canvas.");
+        WriteConsole($"Opened graphical system canvas '{scene.SystemId}'.");
     }
 
     public void AddBlock()
     {
-        if (ActiveDocument is CanvasDocumentViewModel canvas)
+        if (ActiveDocument is not CanvasDocumentViewModel canvas)
         {
-            var node = canvas.Scene.AddNode("custom_block", "Other");
-            canvas.IsDirty = true;
-            StatusText = $"Added {node.Title}.";
-            WriteConsole($"Added block node '{node.Id}'.");
-            UpdateInspector();
+            return;
         }
+
+        var block = _workspace?.Blocks.FirstOrDefault(x => x.Kind == BlockKind.Other) ?? _workspace?.Blocks.FirstOrDefault();
+        if (block is null)
+        {
+            var fallback = canvas.Scene.AddNode("custom", "custom.block", "Custom Block", "Other");
+            canvas.IsDirty = true;
+            StatusText = $"Added {fallback.Title}.";
+            WriteConsole($"Added fallback block node '{fallback.Id}'.");
+            UpdateInspector();
+            return;
+        }
+
+        var ports = block.Interfaces.Select(port => new CanvasPortViewModel(port.Id.Value, port.Direction.ToString(), port.Kind, port.Protocol));
+        var parameters = block.Parameters
+            .Where(x => x.DefaultValue is not null)
+            .ToDictionary(x => x.Name, x => x.DefaultValue ?? "");
+        var node = canvas.Scene.AddNode(block.Name, block.Id.Value, block.Name, block.Kind.ToString(), ports, parameters);
+        canvas.IsDirty = true;
+        StatusText = $"Added {node.Title}.";
+        WriteConsole($"Added block node '{node.Id}' from descriptor '{block.Id}'.");
+        UpdateInspector();
     }
 
     public void Save()
@@ -106,8 +132,18 @@ public sealed class StudioAppViewModel : ObservableObject
 
     public void Build()
     {
-        StatusText = "Build plan generated.";
-        WriteConsole("Build.Generate: descriptor validation and backend generation will be attached here.");
+        LoadWorkspace();
+        var resolved = GetActiveResolvedSystem();
+        if (resolved is null)
+        {
+            StatusText = "No system selected for build.";
+            WriteConsole("Build.Generate: no active system document was selected.");
+            return;
+        }
+
+        UpdateProblems(resolved);
+        StatusText = resolved.IsValid ? "Build plan valid." : $"Build plan has {resolved.Problems.Count} problem(s).";
+        WriteConsole($"Build.Generate: {resolved.System.Id} / {resolved.System.Backend}, instances={resolved.System.Instances.Count}, connections={resolved.System.Connections.Count}.");
     }
 
     public void ZoomToFit()
@@ -131,60 +167,73 @@ public sealed class StudioAppViewModel : ObservableObject
         WriteConsole("Command palette placeholder invoked.");
     }
 
-    private void CreatePanels()
+    private void LoadWorkspace()
     {
-        var project = new StudioPanelViewModel("panel.project", "Project", PanelKind.Project, PanelDock.Left);
-        project.Subtitle = "Workspace tree";
-        project.ReplaceLines([
-            "blocks/",
-            "boards/tang_nano_20k/",
-            "systems/blink_led/",
-            "programs/",
-            "src/Yantra.Studio/"
-        ]);
-
-        var toolbox = new StudioPanelViewModel("panel.toolbox", "Toolbox", PanelKind.Toolbox, PanelDock.Left);
-        toolbox.Subtitle = "Canvas tools";
-        toolbox.ReplaceLines([
-            "Select / Move",
-            "Add Clock",
-            "Add Counter",
-            "Add LED",
-            "Wire ports"
-        ]);
-
-        var inspector = new StudioPanelViewModel("panel.inspector", "Inspector", PanelKind.Inspector, PanelDock.Right);
-        inspector.Subtitle = "Selected object";
-
-        var properties = new StudioPanelViewModel("panel.properties", "Properties", PanelKind.Properties, PanelDock.Right);
-        properties.Subtitle = "Document metadata";
-        properties.ReplaceLines(["No document selected."]);
-
-        var console = new StudioPanelViewModel("panel.console", "Console", PanelKind.Console, PanelDock.Bottom);
-        console.Subtitle = "Command output";
-
-        var problems = new StudioPanelViewModel("panel.problems", "Problems", PanelKind.Problems, PanelDock.Bottom);
-        problems.Subtitle = "Validation";
-        problems.ReplaceLines(["No problems yet."]);
-
-        LeftPanels.Add(project);
-        LeftPanels.Add(toolbox);
-        RightPanels.Add(inspector);
-        RightPanels.Add(properties);
-        BottomPanels.Add(console);
-        BottomPanels.Add(problems);
+        try
+        {
+            _workspace = _workspaceLoader.LoadNearest();
+            UpdateWorkspacePanels();
+            UpdateProblems(_workspace.ResolvedSystems.FirstOrDefault());
+            WriteConsole($"Workspace loaded: {_workspace.RootDirectory}");
+        }
+        catch (Exception ex)
+        {
+            _workspace = null;
+            UpdateFallbackPanels(ex);
+            WriteConsole($"Workspace load failed: {ex.Message}");
+        }
     }
 
-    private CanvasSceneViewModel CreateSampleScene()
+    private CanvasSceneViewModel CreateWorkspaceScene()
     {
-        var scene = new CanvasSceneViewModel();
-        scene.Nodes.Add(new CanvasNodeViewModel("clock", "clock_27mhz", "Clock", 60, 80));
-        scene.Nodes.Add(new CanvasNodeViewModel("counter", "counter", "Arithmetic", 280, 80));
-        scene.Nodes.Add(new CanvasNodeViewModel("led", "led0", "Io", 500, 80));
-        scene.Connections.Add(new CanvasConnectionViewModel("clock", "counter", "tick"));
-        scene.Connections.Add(new CanvasConnectionViewModel("counter", "led", "bit[24]"));
-        scene.SelectedNode = scene.Nodes.FirstOrDefault();
-        return scene;
+        var system = _workspace?.Systems.FirstOrDefault(x => x.Id.Value == "blink_led") ?? _workspace?.Systems.FirstOrDefault();
+        if (system is not null && _workspace is not null)
+        {
+            return CanvasSceneFactory.FromSystem(system, _workspace.BlocksById);
+        }
+
+        return CanvasSceneFactory.Sample();
+    }
+
+    private void CreatePanels()
+    {
+        LeftPanels.Add(new StudioPanelViewModel("panel.project", "Project", PanelKind.Project, PanelDock.Left) { Subtitle = "Workspace tree" });
+        LeftPanels.Add(new StudioPanelViewModel("panel.toolbox", "Toolbox", PanelKind.Toolbox, PanelDock.Left) { Subtitle = "Block descriptors" });
+        RightPanels.Add(new StudioPanelViewModel("panel.inspector", "Inspector", PanelKind.Inspector, PanelDock.Right) { Subtitle = "Selected object" });
+        RightPanels.Add(new StudioPanelViewModel("panel.properties", "Properties", PanelKind.Properties, PanelDock.Right) { Subtitle = "Document metadata" });
+        BottomPanels.Add(new StudioPanelViewModel("panel.console", "Console", PanelKind.Console, PanelDock.Bottom) { Subtitle = "Command output" });
+        BottomPanels.Add(new StudioPanelViewModel("panel.problems", "Problems", PanelKind.Problems, PanelDock.Bottom) { Subtitle = "Validation" });
+    }
+
+    private void UpdateWorkspacePanels()
+    {
+        if (_workspace is null)
+        {
+            return;
+        }
+
+        var project = LeftPanels.FirstOrDefault(x => x.Kind == PanelKind.Project);
+        project?.ReplaceLines([
+            $"root: {_workspace.RootDirectory}",
+            $"blocks: {_workspace.Blocks.Count}",
+            $"boards: {_workspace.Boards.Count}",
+            $"systems: {_workspace.Systems.Count}",
+            .._workspace.Systems.Select(x => $"system: {x.Id} ({x.Instances.Count} blocks, {x.Connections.Count} wires)")
+        ]);
+
+        var toolbox = LeftPanels.FirstOrDefault(x => x.Kind == PanelKind.Toolbox);
+        toolbox?.ReplaceLines(_workspace.Blocks
+            .OrderBy(x => x.Kind)
+            .ThenBy(x => x.Id.Value, StringComparer.OrdinalIgnoreCase)
+            .Select(x => $"{x.Kind}: {x.Id} — {x.Name}")
+            .ToArray());
+    }
+
+    private void UpdateFallbackPanels(Exception ex)
+    {
+        LeftPanels.FirstOrDefault(x => x.Kind == PanelKind.Project)?.ReplaceLines(["Workspace not loaded.", ex.Message]);
+        LeftPanels.FirstOrDefault(x => x.Kind == PanelKind.Toolbox)?.ReplaceLines(["No descriptors loaded."]);
+        BottomPanels.FirstOrDefault(x => x.Kind == PanelKind.Problems)?.ReplaceLines([$"workspace-load: {ex.Message}"]);
     }
 
     private void UpdateInspector()
@@ -197,10 +246,23 @@ public sealed class StudioAppViewModel : ObservableObject
             var node = canvas.Scene.SelectedNode;
             inspector?.ReplaceLines(node is null
                 ? ["Nothing selected."]
-                : [$"Id: {node.Id}", $"Title: {node.Title}", $"Kind: {node.BlockKind}", $"X: {node.X:0}", $"Y: {node.Y:0}"]);
+                : [
+                    $"Instance: {node.Id}",
+                    $"Block: {node.BlockId}",
+                    $"Name: {node.BlockName}",
+                    $"Kind: {node.BlockKind}",
+                    $"Inputs: {string.Join(", ", node.Inputs.Select(x => x.Id))}",
+                    $"Outputs: {string.Join(", ", node.Outputs.Select(x => x.Id))}",
+                    ..node.Parameters.Select(x => $"{x.Key}: {x.Value}"),
+                    $"X: {node.X:0}",
+                    $"Y: {node.Y:0}"
+                ]);
 
             properties?.ReplaceLines([
                 $"Document: {canvas.Title}",
+                $"System: {canvas.Scene.SystemId}",
+                $"Board: {canvas.Scene.BoardId}",
+                $"Backend: {canvas.Scene.BackendId}",
                 $"Nodes: {canvas.Scene.Nodes.Count}",
                 $"Connections: {canvas.Scene.Connections.Count}",
                 $"Dirty: {canvas.IsDirty}",
@@ -212,6 +274,35 @@ public sealed class StudioAppViewModel : ObservableObject
             inspector?.ReplaceLines([$"Document: {ActiveDocument.Title}"]);
             properties?.ReplaceLines([$"Dirty: {ActiveDocument.IsDirty}"]);
         }
+    }
+
+    private ResolvedSystem? GetActiveResolvedSystem()
+    {
+        if (_workspace is null || ActiveDocument is not CanvasDocumentViewModel canvas)
+        {
+            return null;
+        }
+
+        return _workspace.ResolvedBySystemId.TryGetValue(new SystemId(canvas.Scene.SystemId), out var resolved) ? resolved : null;
+    }
+
+    private void UpdateProblems(ResolvedSystem? resolved)
+    {
+        var problems = BottomPanels.FirstOrDefault(x => x.Kind == PanelKind.Problems);
+        if (problems is null)
+        {
+            return;
+        }
+
+        if (resolved is null)
+        {
+            problems.ReplaceLines(["No system loaded."]);
+            return;
+        }
+
+        problems.ReplaceLines(resolved.IsValid
+            ? [$"{resolved.System.Id}: no problems."]
+            : resolved.Problems.Select(x => $"{x.Code}: {x.Message}").ToArray());
     }
 
     private void WriteConsole(string line)

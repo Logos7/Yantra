@@ -29,3 +29,12 @@ feat(studio): add graphical workspace scaffold
 ## Note
 
 This ZIP is a full scaffold drop. It is meant to be extracted over the repository root or inspected in a clean folder first.
+
+## Step 02 — YAML-driven system canvas
+
+- `Yantra.Studio` now loads the nearest Yantra workspace root at startup.
+- The main canvas is generated from real `systems/*/system.yaml` descriptors.
+- Block instances use descriptor metadata from `blocks/**/block.yaml`.
+- Connections are rendered from system endpoints with port-aware curved wires.
+- Project, Toolbox, Inspector, Properties and Problems panels now reflect loaded workspace data.
+- Composer validation no longer crashes on duplicate instances; it reports descriptor problems.

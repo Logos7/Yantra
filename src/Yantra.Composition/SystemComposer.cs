@@ -6,13 +6,21 @@ public sealed class SystemComposer
 {
     public ResolvedSystem Compose(SystemDefinition system, IEnumerable<BlockDefinition> blocks)
     {
-        var blockMap = blocks.ToDictionary(x => x.Id);
         var problems = new List<CompositionProblem>();
-        var instanceIds = new HashSet<InstanceId>();
+        var blockMap = new Dictionary<BlockId, BlockDefinition>();
 
+        foreach (var block in blocks)
+        {
+            if (!blockMap.TryAdd(block.Id, block))
+            {
+                problems.Add(new CompositionProblem("duplicate-block", $"Block '{block.Id}' is defined more than once."));
+            }
+        }
+
+        var instanceMap = new Dictionary<InstanceId, BlockInstance>();
         foreach (var instance in system.Instances)
         {
-            if (!instanceIds.Add(instance.Id))
+            if (!instanceMap.TryAdd(instance.Id, instance))
             {
                 problems.Add(new CompositionProblem("duplicate-instance", $"Instance '{instance.Id}' is defined more than once."));
             }
@@ -23,7 +31,6 @@ public sealed class SystemComposer
             }
         }
 
-        var instanceMap = system.Instances.ToDictionary(x => x.Id, x => x);
         foreach (var connection in system.Connections)
         {
             ValidateEndpoint(connection.From, "from");

@@ -1,49 +1,41 @@
 # Yantra.Studio
 
-Yantra.Studio is intended to behave like a compact hardware-design IDE.
+Yantra.Studio is the graphical workspace for assembling Yantra systems from reusable blocks.
 
-The core UI rule is simple:
+The current scaffold contains:
 
-```text
-Documents in the center, tools around them.
+- a shell with menu, toolbar, document tabs and side panels,
+- a graphical canvas with pan, zoom, selection and dragging,
+- descriptor-driven block rendering from `blocks/**/block.yaml`,
+- system rendering from `systems/**/system.yaml`,
+- validation feedback through the Problems panel,
+- Inspector and Properties panels bound to the selected node and active document.
+
+## Startup
+
+Run from the repository root:
+
+```powershell
+dotnet restore
+dotnet run --project src/Yantra.Studio
 ```
 
-## Document types
+The app searches upward from the current directory and executable directory until it finds a Yantra workspace root containing:
 
-```text
-System canvas
-Block editor
-Board editor
-Program editor
-Build preview
-Generated HDL preview
-```
+- `Yantra.sln`,
+- `blocks/`,
+- `systems/`.
 
-## Panel types
+It then loads blocks, boards and systems, and opens the first available system canvas. If `blink_led` exists, that system is preferred.
 
-```text
-Project Explorer
-Toolbox
-Inspector
-Properties
-Console
-Problems
-Build Output
-```
+## Current editing model
 
-## Command spine
+The canvas is still an MVP editor:
 
-Every user action should become a command before it becomes a button.
+- left click selects and drags block instances,
+- mouse wheel zooms around the cursor,
+- middle or right drag pans the canvas,
+- Build validates the active system descriptor,
+- Add Block creates a new unsaved visual node.
 
-```text
-Project.New
-Project.Open
-Project.Save
-Canvas.AddBlock
-Canvas.ZoomToFit
-Build.Generate
-Build.Run
-View.ResetLayout
-```
-
-This keeps menu, toolbar, shortcuts, command palette, and scripting coherent.
+Saving node positions back into YAML is intentionally not implemented yet. That should come next through a dedicated layout section, not by mutating the logical system graph accidentally.

@@ -10,6 +10,18 @@ public sealed class CanvasSceneViewModel : ObservableObject
     private double _panY = 40;
     private double _zoom = 1.0;
 
+    public CanvasSceneViewModel(string systemId, string title, string boardId, string backendId)
+    {
+        SystemId = systemId;
+        Title = title;
+        BoardId = boardId;
+        BackendId = backendId;
+    }
+
+    public string SystemId { get; }
+    public string Title { get; }
+    public string BoardId { get; }
+    public string BackendId { get; }
     public ObservableCollection<CanvasNodeViewModel> Nodes { get; } = [];
     public ObservableCollection<CanvasConnectionViewModel> Connections { get; } = [];
 
@@ -57,10 +69,10 @@ public sealed class CanvasSceneViewModel : ObservableObject
         set => Set(ref _zoom, Math.Clamp(value, 0.25, 4.0));
     }
 
-    public CanvasNodeViewModel AddNode(string title, string kind)
+    public CanvasNodeViewModel AddNode(string title, string blockId, string blockName, string kind, IEnumerable<CanvasPortViewModel>? ports = null, IReadOnlyDictionary<string, string>? parameters = null)
     {
         var index = Nodes.Count + 1;
-        var node = new CanvasNodeViewModel($"n{index}", title, kind, 80 + index * 30, 80 + index * 20);
+        var node = new CanvasNodeViewModel($"n{index}", title, blockId, blockName, kind, ports, parameters, 80 + index * 34, 80 + index * 24);
         Nodes.Add(node);
         SelectedNode = node;
         return node;

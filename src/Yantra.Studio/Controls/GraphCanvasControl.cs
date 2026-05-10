@@ -43,6 +43,7 @@ public sealed class GraphCanvasControl : Control
             if (change.OldValue is CanvasSceneViewModel oldScene)
             {
                 oldScene.Nodes.CollectionChanged -= OnNodesChanged;
+                oldScene.Connections.CollectionChanged -= OnConnectionsChanged;
                 oldScene.PropertyChanged -= OnSceneChanged;
                 foreach (var node in oldScene.Nodes)
                 {
@@ -53,6 +54,7 @@ public sealed class GraphCanvasControl : Control
             if (change.NewValue is CanvasSceneViewModel newScene)
             {
                 newScene.Nodes.CollectionChanged += OnNodesChanged;
+                newScene.Connections.CollectionChanged += OnConnectionsChanged;
                 newScene.PropertyChanged += OnSceneChanged;
                 foreach (var node in newScene.Nodes)
                 {
@@ -83,7 +85,7 @@ public sealed class GraphCanvasControl : Control
             var to = Scene.Nodes.FirstOrDefault(x => x.Id == connection.ToNodeId);
             if (from is not null && to is not null)
             {
-                DrawConnection(context, from, to, connection.Label);
+                DrawConnection(context, from, connection.FromPortId, to, connection.ToPortId, connection.Label);
             }
         }
 
@@ -220,35 +222,86 @@ public sealed class GraphCanvasControl : Control
         }
     }
 
-    private void DrawConnection(DrawingContext context, CanvasNodeViewModel from, CanvasNodeViewModel to, string label)
+    private void DrawConnection(DrawingContext context, CanvasNodeViewModel from, string fromPortId, CanvasNodeViewModel to, string toPortId, string label)
     {
-        var start = ToScreen(new Point(from.X + from.Width, from.Y + from.Height / 2));
-        var end = ToScreen(new Point(to.X, to.Y + to.Height / 2));
+        var start = GetPortPoint(from, fromPortId, true);
+        var end = GetPortPoint(to, toPortId, false);
         var pen = new Pen(new SolidColorBrush(Color.FromRgb(105, 177, 255)), 2);
-        context.DrawLine(pen, start, end);
+        var c1 = new Point(start.X + 72 * (Scene?.Zoom ?? 1), start.Y);
+        var c2 = new Point(end.X - 72 * (Scene?.Zoom ?? 1), end.Y);
+        var geometry = new StreamGeometry();
 
-        var middle = new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2 - 16);
+        using (var stream = geometry.Open())
+        {
+            stream.BeginFigure(start, false);
+            stream.CubicBezierTo(c1, c2, end);
+            stream.EndFigure(false);
+        }
+
+        context.DrawGeometry(null, pen, geometry);
+        var middle = new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2 - 18);
         DrawText(context, label, middle, 11, new SolidColorBrush(Color.FromRgb(154, 201, 255)));
     }
 
     private void DrawNode(DrawingContext context, CanvasNodeViewModel node)
     {
+        var zoom = Scene?.Zoom ?? 1;
         var p = ToScreen(new Point(node.X, node.Y));
-        var rect = new Rect(p.X, p.Y, node.Width * (Scene?.Zoom ?? 1), node.Height * (Scene?.Zoom ?? 1));
+        var rect = new Rect(p.X, p.Y, node.Width * zoom, node.Height * zoom);
         var fill = node.IsSelected
             ? new SolidColorBrush(Color.FromRgb(39, 66, 104))
             : new SolidColorBrush(Color.FromRgb(24, 31, 46));
         var border = node.IsSelected
             ? new Pen(new SolidColorBrush(Color.FromRgb(122, 187, 255)), 2)
             : new Pen(new SolidColorBrush(Color.FromRgb(62, 73, 96)), 1);
+        var header = node.BlockKind switch
+        {
+            "Clock" => new SolidColorBrush(Color.FromRgb(95, 73, 38)),
+            "Arithmetic" => new SolidColorBrush(Color.FromRgb(40, 68, 93)),
+            "Io" => new SolidColorBrush(Color.FromRgb(49, 83, 58)),
+            "Processor" => new SolidColorBrush(Color.FromRgb(76, 52, 94)),
+            "Video" => new SolidColorBrush(Color.FromRgb(84, 54, 60)),
+            _ => new SolidColorBrush(Color.FromRgb(42, 48, 64))
+        };
 
         context.DrawRectangle(fill, border, rect, 8, 8);
-        DrawText(context, node.Title, new Point(rect.X + 14, rect.Y + 12), 13, Brushes.White);
-        DrawText(context, node.BlockKind, new Point(rect.X + 14, rect.Y + 36), 11, new SolidColorBrush(Color.FromRgb(170, 181, 202)));
+        context.DrawRectangle(header, null, new Rect(rect.X, rect.Y, rect.Width, Math.Min(26 * zoom, rect.Height)), 8, 8);
+        DrawText(context, node.Title, new Point(rect.X + 14 * zoom, rect.Y + 8 * zoom), 13 * zoom, Brushes.White);
+        DrawText(context, node.BlockId, new Point(rect.X + 14 * zoom, rect.Y + 36 * zoom), 11 * zoom, new SolidColorBrush(Color.FromRgb(188, 198, 218)));
+        DrawText(context, node.BlockKind, new Point(rect.X + 14 * zoom, rect.Y + 56 * zoom), 10 * zoom, new SolidColorBrush(Color.FromRgb(139, 151, 176)));
+        DrawPorts(context, node);
+    }
 
-        var portBrush = new SolidColorBrush(Color.FromRgb(255, 196, 92));
-        context.FillRectangle(portBrush, new Rect(rect.X - 4, rect.Center.Y - 4, 8, 8));
-        context.FillRectangle(portBrush, new Rect(rect.Right - 4, rect.Center.Y - 4, 8, 8));
+    private void DrawPorts(DrawingContext context, CanvasNodeViewModel node)
+    {
+        foreach (var port in node.Inputs)
+        {
+            DrawPort(context, node, port, false);
+        }
+
+        foreach (var port in node.Outputs)
+        {
+            DrawPort(context, node, port, true);
+        }
+    }
+
+    private void DrawPort(DrawingContext context, CanvasNodeViewModel node, CanvasPortViewModel port, bool output)
+    {
+        var point = GetPortPoint(node, port.Id, output);
+        var brush = output
+            ? new SolidColorBrush(Color.FromRgb(255, 196, 92))
+            : new SolidColorBrush(Color.FromRgb(128, 220, 171));
+        context.FillRectangle(brush, new Rect(point.X - 4, point.Y - 4, 8, 8));
+    }
+
+    private Point GetPortPoint(CanvasNodeViewModel node, string portId, bool output)
+    {
+        var ports = output ? node.Outputs : node.Inputs;
+        var index = Math.Max(0, ports.ToList().FindIndex(x => x.Id == portId));
+        var count = Math.Max(1, ports.Count);
+        var y = node.Y + 34 + index * Math.Min(18, 40.0 / count);
+        var x = output ? node.X + node.Width : node.X;
+        return ToScreen(new Point(x, Math.Min(node.Y + node.Height - 14, y)));
     }
 
     private CanvasNodeViewModel? HitTest(Point world)
@@ -315,6 +368,11 @@ public sealed class GraphCanvasControl : Control
             }
         }
 
+        InvalidateVisual();
+    }
+
+    private void OnConnectionsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
         InvalidateVisual();
     }
 
