@@ -1,99 +1,65 @@
 namespace Yantra.Schema;
 
-public sealed class BlockDocument
+public sealed class BlockDescriptorDocument
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Kind { get; set; } = string.Empty;
-    public List<ParameterDocument> Parameters { get; set; } = [];
-    public List<InterfaceDocument> Interfaces { get; set; } = [];
-    public List<string> Notes { get; set; } = [];
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Kind { get; set; } = "Other";
+    public List<InterfaceDescriptorDocument> Interfaces { get; set; } = [];
+    public List<ParameterDescriptorDocument> Parameters { get; set; } = [];
 }
 
-public sealed class ParameterDocument
+public sealed class InterfaceDescriptorDocument
 {
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
-    public object? Default { get; set; }
+    public string Id { get; set; } = "";
+    public string Kind { get; set; } = "signal";
+    public string Protocol { get; set; } = "wire";
+    public string Direction { get; set; } = "InOut";
 }
 
-public sealed class InterfaceDocument
+public sealed class ParameterDescriptorDocument
 {
-    public string Name { get; set; } = string.Empty;
-    public string Kind { get; set; } = string.Empty;
-    public string Protocol { get; set; } = string.Empty;
+    public string Name { get; set; } = "";
+    public string Type { get; set; } = "string";
+    public string? DefaultValue { get; set; }
 }
 
-public sealed class BoardDocument
+public sealed class BoardDescriptorDocument
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Vendor { get; set; } = string.Empty;
-    public List<BoardClockDocument> Clocks { get; set; } = [];
-    public List<BoardLedDocument> Leds { get; set; } = [];
-    public Dictionary<string, BoardConstraintBackendDocument> Constraints { get; set; } = [];
-    public List<string> Notes { get; set; } = [];
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Vendor { get; set; } = "";
+    public string Family { get; set; } = "";
+    public string Device { get; set; } = "";
+    public List<BoardPinDescriptorDocument> Pins { get; set; } = [];
 }
 
-public sealed class BoardClockDocument
+public sealed class BoardPinDescriptorDocument
 {
-    public string Id { get; set; } = string.Empty;
-    public long FrequencyHz { get; set; }
-    public string Pin { get; set; } = string.Empty;
-    public string Signal { get; set; } = string.Empty;
+    public string Name { get; set; } = "";
+    public string PhysicalPin { get; set; } = "";
+    public string SignalKind { get; set; } = "gpio";
 }
 
-public sealed class BoardLedDocument
+public sealed class SystemDescriptorDocument
 {
-    public string Id { get; set; } = string.Empty;
-    public string Pin { get; set; } = string.Empty;
-    public string Signal { get; set; } = string.Empty;
-    public string Active { get; set; } = string.Empty;
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Board { get; set; } = "";
+    public string Backend { get; set; } = "";
+    public List<BlockInstanceDescriptorDocument> Instances { get; set; } = [];
+    public List<SystemConnectionDescriptorDocument> Connections { get; set; } = [];
 }
 
-public sealed class BoardConstraintBackendDocument
+public sealed class BlockInstanceDescriptorDocument
 {
-    public List<string> Fragments { get; set; } = [];
-}
-
-public sealed class SystemDocument
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Board { get; set; } = string.Empty;
-    public string Backend { get; set; } = string.Empty;
-    public List<InstanceDocument> Instances { get; set; } = [];
-    public List<ConnectionDocument> Connections { get; set; } = [];
-}
-
-public sealed class InstanceDocument
-{
-    public string Id { get; set; } = string.Empty;
-    public string Block { get; set; } = string.Empty;
+    public string Id { get; set; } = "";
+    public string Block { get; set; } = "";
     public Dictionary<string, string> Parameters { get; set; } = [];
 }
 
-public sealed class ConnectionDocument
+public sealed class SystemConnectionDescriptorDocument
 {
-    public string From { get; set; } = string.Empty;
-    public string To { get; set; } = string.Empty;
-}
-
-public sealed class BuildDocument
-{
-    public string Id { get; set; } = string.Empty;
-    public string System { get; set; } = string.Empty;
-    public string Board { get; set; } = string.Empty;
-    public string Backend { get; set; } = string.Empty;
-    public string Top { get; set; } = string.Empty;
-    public List<string> Constraints { get; set; } = [];
-    public List<BoardBindingDocument> BoardBindings { get; set; } = [];
-    public List<string> Notes { get; set; } = [];
-}
-
-public sealed class BoardBindingDocument
-{
-    public string Interface { get; set; } = string.Empty;
-    public string Resource { get; set; } = string.Empty;
-    public string Signal { get; set; } = string.Empty;
+    public string From { get; set; } = "";
+    public string To { get; set; } = "";
 }

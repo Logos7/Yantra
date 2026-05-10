@@ -1,67 +1,79 @@
-using System.Globalization;
 using Yantra.Domain;
 
 namespace Yantra.Schema;
 
 public static class SchemaDomainMapper
 {
-    public static BlockDefinition ToDomain(this BlockDocument document)
+    public static BlockDefinition ToDomain(this BlockDescriptorDocument document)
     {
-        var kind = Enum.TryParse<BlockKind>(document.Kind, ignoreCase: true, out var parsedKind)
-            ? parsedKind
-            : BlockKind.Other;
-
         return new BlockDefinition(
             new BlockId(document.Id),
             document.Name,
-            kind,
-            document.Interfaces
-                .Select(i => new BlockInterface(new InterfaceId(i.Name), i.Kind, i.Protocol))
-                .ToList(),
-            document.Parameters
-                .Select(p => new BlockParameter(p.Name, p.Type, ToInvariantString(p.Default)))
-                .ToList());
+            ParseEnum<BlockKind>(document.Kind, BlockKind.Other),
+            document.Interfaces.Select(ToDomain).ToArray(),
+            document.Parameters.Select(ToDomain).ToArray());
     }
 
-    public static SystemDefinition ToDomain(this SystemDocument document)
+    public static BoardDefinition ToDomain(this BoardDescriptorDocument document)
+    {
+        return new BoardDefinition(
+            new BoardId(document.Id),
+            document.Name,
+            document.Vendor,
+            document.Family,
+            document.Device,
+            document.Pins.Select(x => new BoardPin(x.Name, x.PhysicalPin, x.SignalKind)).ToArray());
+    }
+
+    public static SystemDefinition ToDomain(this SystemDescriptorDocument document)
     {
         return new SystemDefinition(
             new SystemId(document.Id),
             document.Name,
             new BoardId(document.Board),
             new BackendId(document.Backend),
-            document.Instances
-                .Select(i => new BlockInstance(
-                    new InstanceId(i.Id),
-                    new BlockId(i.Block),
-                    new Dictionary<string, string>(i.Parameters, StringComparer.Ordinal)))
-                .ToList(),
-            document.Connections
-                .Select(c => new SystemConnection(ParseEndpoint(c.From), ParseEndpoint(c.To)))
-                .ToList());
+            document.Instances.Select(ToDomain).ToArray(),
+            document.Connections.Select(ToDomain).ToArray());
+    }
+
+    private static BlockInterface ToDomain(InterfaceDescriptorDocument document)
+    {
+        return new BlockInterface(
+            new InterfaceId(document.Id),
+            document.Kind,
+            document.Protocol,
+            ParseEnum<InterfaceDirection>(document.Direction, InterfaceDirection.InOut));
+    }
+
+    private static BlockParameter ToDomain(ParameterDescriptorDocument document)
+    {
+        return new BlockParameter(document.Name, document.Type, document.DefaultValue);
+    }
+
+    private static BlockInstance ToDomain(BlockInstanceDescriptorDocument document)
+    {
+        return new BlockInstance(new InstanceId(document.Id), new BlockId(document.Block), document.Parameters);
+    }
+
+    private static SystemConnection ToDomain(SystemConnectionDescriptorDocument document)
+    {
+        return new SystemConnection(ParseEndpoint(document.From), ParseEndpoint(document.To));
     }
 
     private static Endpoint ParseEndpoint(string value)
     {
-        var dotIndex = value.LastIndexOf('.');
-
-        if (dotIndex <= 0 || dotIndex == value.Length - 1)
+        var parts = value.Split('.', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
         {
-            throw new FormatException($"Endpoint must have form instance.interface: {value}");
+            throw new FormatException($"Endpoint '{value}' must use 'instance.interface'.");
         }
 
-        return new Endpoint(
-            new InstanceId(value[..dotIndex]),
-            new InterfaceId(value[(dotIndex + 1)..]));
+        return new Endpoint(new InstanceId(parts[0]), new InterfaceId(parts[1]));
     }
 
-    private static string? ToInvariantString(object? value)
+    private static TEnum ParseEnum<TEnum>(string value, TEnum fallback)
+        where TEnum : struct, Enum
     {
-        return value switch
-        {
-            null => null,
-            IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
-            _ => value.ToString()
-        };
+        return Enum.TryParse<TEnum>(value, true, out var parsed) ? parsed : fallback;
     }
 }

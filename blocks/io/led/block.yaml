@@ -1,16 +1,12 @@
-id: io/led
-name: LED
+id: io.led
+name: Single LED output
 kind: Io
-
 interfaces:
-  - name: in
-    kind: digital.sink
-    protocol: yantra.bit.v1
-
-  - name: pin
-    kind: board.output
-    protocol: yantra.board.pin.v1
-
-notes:
-  - Logical LED output block.
-  - The physical LED pin is selected by the build descriptor.
+  - id: input
+    kind: signal
+    protocol: wire
+    direction: Input
+parameters:
+  - name: active_low
+    type: bool
+    defaultValue: "true"

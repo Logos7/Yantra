@@ -42,9 +42,23 @@ public enum BlockKind
     Other
 }
 
-public sealed record BlockInterface(InterfaceId Id, string Kind, string Protocol);
+public enum InterfaceDirection
+{
+    Input,
+    Output,
+    InOut
+}
 
-public sealed record BlockParameter(string Name, string Type, string? DefaultValue);
+public sealed record BlockInterface(
+    InterfaceId Id,
+    string Kind,
+    string Protocol,
+    InterfaceDirection Direction);
+
+public sealed record BlockParameter(
+    string Name,
+    string Type,
+    string? DefaultValue);
 
 public sealed record Endpoint(InstanceId Instance, InterfaceId Interface)
 {
@@ -67,6 +81,19 @@ public sealed record BlockDefinition(
     BlockKind Kind,
     IReadOnlyList<BlockInterface> Interfaces,
     IReadOnlyList<BlockParameter> Parameters);
+
+public sealed record BoardPin(
+    string Name,
+    string PhysicalPin,
+    string SignalKind);
+
+public sealed record BoardDefinition(
+    BoardId Id,
+    string Name,
+    string Vendor,
+    string Family,
+    string Device,
+    IReadOnlyList<BoardPin> Pins);
 
 public sealed record SystemDefinition(
     SystemId Id,

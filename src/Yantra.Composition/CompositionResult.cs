@@ -2,23 +2,12 @@ using Yantra.Domain;
 
 namespace Yantra.Composition;
 
-public enum DiagnosticSeverity
-{
-    Info,
-    Warning,
-    Error
-}
+public sealed record CompositionProblem(string Code, string Message);
 
-public sealed record CompositionDiagnostic(DiagnosticSeverity Severity, string Message);
-
-public sealed record CompositionResult(
+public sealed record ResolvedSystem(
     SystemDefinition System,
-    IReadOnlyList<CompositionDiagnostic> Diagnostics)
+    IReadOnlyDictionary<BlockId, BlockDefinition> Blocks,
+    IReadOnlyList<CompositionProblem> Problems)
 {
-    public bool IsSuccess => Diagnostics.All(d => d.Severity != DiagnosticSeverity.Error);
-}
-
-public sealed record WorkspaceCompositionResult(IReadOnlyList<CompositionResult> Systems)
-{
-    public bool IsSuccess => Systems.All(s => s.IsSuccess);
+    public bool IsValid => Problems.Count == 0;
 }

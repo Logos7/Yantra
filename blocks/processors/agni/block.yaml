@@ -1,0 +1,23 @@
+id: processor.agni
+name: Agni soft CPU
+kind: Processor
+interfaces:
+  - id: clk
+    kind: clock
+    protocol: wire
+    direction: Input
+  - id: reset
+    kind: reset
+    protocol: wire
+    direction: Input
+  - id: mmio
+    kind: bus
+    protocol: yantra-mmio-simple
+    direction: InOut
+parameters:
+  - name: imem_words
+    type: int
+    defaultValue: "2048"
+  - name: dmem_words
+    type: int
+    defaultValue: "2048"

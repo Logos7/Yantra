@@ -1,0 +1,12 @@
+id: clock.27mhz
+name: 27 MHz board clock
+kind: Clock
+interfaces:
+  - id: clk
+    kind: clock
+    protocol: wire
+    direction: Output
+parameters:
+  - name: frequency_hz
+    type: int
+    defaultValue: "27000000"

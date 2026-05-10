@@ -1,28 +1,26 @@
+using Yantra.Domain;
 using Yantra.Schema;
 
 namespace Yantra.Composition;
 
 public sealed class WorkspaceComposer
 {
-    private readonly SystemComposer composer;
+    private readonly WorkspaceDescriptorLoader _loader = new();
+    private readonly SystemComposer _composer = new();
 
-    public WorkspaceComposer()
-        : this(new SystemComposer())
+    public WorkspaceComposition Compose(string rootDirectory)
     {
-    }
+        var blocks = _loader.LoadBlocks(rootDirectory);
+        var boards = _loader.LoadBoards(rootDirectory);
+        var systems = _loader.LoadSystems(rootDirectory);
+        var resolved = systems.Select(system => _composer.Compose(system, blocks)).ToArray();
 
-    public WorkspaceComposer(SystemComposer composer)
-    {
-        this.composer = composer;
-    }
-
-    public WorkspaceCompositionResult Compose(WorkspaceDescriptorSet descriptors)
-    {
-        var blocks = descriptors.Blocks.Select(b => b.ToDomain()).ToList();
-        var systems = descriptors.Systems
-            .Select(s => composer.Compose(s.ToDomain(), blocks))
-            .ToList();
-
-        return new WorkspaceCompositionResult(systems);
+        return new WorkspaceComposition(blocks, boards, systems, resolved);
     }
 }
+
+public sealed record WorkspaceComposition(
+    IReadOnlyList<BlockDefinition> Blocks,
+    IReadOnlyList<BoardDefinition> Boards,
+    IReadOnlyList<SystemDefinition> Systems,
+    IReadOnlyList<ResolvedSystem> ResolvedSystems);

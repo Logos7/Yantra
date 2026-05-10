@@ -1,0 +1,15 @@
+id: memory.bram
+name: Block RAM
+kind: Memory
+interfaces:
+  - id: port
+    kind: memory
+    protocol: sync-ram
+    direction: InOut
+parameters:
+  - name: address_width
+    type: int
+    defaultValue: "10"
+  - name: data_width
+    type: int
+    defaultValue: "32"

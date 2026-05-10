@@ -2,20 +2,20 @@ id: blink_led
 name: Blink LED
 board: tang_nano_20k
 backend: gowin
-
 instances:
-  - id: clk0
-    block: clock/input_clock
-
-  - id: counter0
-    block: clock/counter
-
+  - id: clock
+    block: clock.27mhz
+    parameters: {}
+  - id: counter
+    block: arithmetic.counter
+    parameters:
+      width: "25"
   - id: led0
-    block: io/led
-
+    block: io.led
+    parameters:
+      active_low: "true"
 connections:
-  - from: clk0.out
-    to: counter0.clk
-
-  - from: counter0.bit23
-    to: led0.in
+  - from: clock.clk
+    to: counter.clk
+  - from: counter.value
+    to: led0.input

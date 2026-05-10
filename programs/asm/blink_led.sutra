@@ -1,0 +1,4 @@
+.code
+main:
+    wait 1
+    jump main

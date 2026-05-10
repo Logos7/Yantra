@@ -1,0 +1,19 @@
+id: bus.mmio_simple
+name: Simple MMIO bus
+kind: Bus
+interfaces:
+  - id: master
+    kind: bus
+    protocol: yantra-mmio-simple
+    direction: InOut
+  - id: slave
+    kind: bus
+    protocol: yantra-mmio-simple
+    direction: InOut
+parameters:
+  - name: address_width
+    type: int
+    defaultValue: "16"
+  - name: data_width
+    type: int
+    defaultValue: "32"

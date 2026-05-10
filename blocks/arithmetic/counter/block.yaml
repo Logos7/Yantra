@@ -1,0 +1,16 @@
+id: arithmetic.counter
+name: Free-running counter
+kind: Arithmetic
+interfaces:
+  - id: clk
+    kind: clock
+    protocol: wire
+    direction: Input
+  - id: value
+    kind: signal
+    protocol: wire
+    direction: Output
+parameters:
+  - name: width
+    type: int
+    defaultValue: "25"

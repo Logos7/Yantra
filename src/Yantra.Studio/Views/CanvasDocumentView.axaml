@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Yantra.Studio.Controls"
+             x:Class="Yantra.Studio.Views.CanvasDocumentView">
+  <Grid>
+    <controls:GraphCanvasControl Scene="{Binding Scene}" />
+  </Grid>
+</UserControl>

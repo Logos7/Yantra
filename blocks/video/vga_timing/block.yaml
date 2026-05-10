@@ -1,0 +1,19 @@
+id: video.vga_timing
+name: VGA timing generator
+kind: Video
+interfaces:
+  - id: pixel_clk
+    kind: clock
+    protocol: wire
+    direction: Input
+  - id: rgb
+    kind: video
+    protocol: vga-rgb
+    direction: Output
+parameters:
+  - name: width
+    type: int
+    defaultValue: "640"
+  - name: height
+    type: int
+    defaultValue: "480"

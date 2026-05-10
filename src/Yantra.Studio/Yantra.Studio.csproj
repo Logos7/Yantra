@@ -2,14 +2,12 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.*" />
     <PackageReference Include="Avalonia.Desktop" Version="11.*" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.*" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.*" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Yantra.Domain\Yantra.Domain.csproj" />
     <ProjectReference Include="..\Yantra.Schema\Yantra.Schema.csproj" />

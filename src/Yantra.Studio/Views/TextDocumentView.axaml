@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Yantra.Studio.Views.TextDocumentView">
+  <TextBox Text="{Binding Text, Mode=TwoWay}"
+           AcceptsReturn="True"
+           AcceptsTab="True"
+           FontFamily="Consolas, Cascadia Mono, monospace"
+           FontSize="13"
+           Background="#0E131C"
+           Foreground="#E7ECF5"
+           BorderThickness="0"
+           Padding="14"
+           TextWrapping="NoWrap" />
+</UserControl>
